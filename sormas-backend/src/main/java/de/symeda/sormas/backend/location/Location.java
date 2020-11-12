@@ -70,6 +70,7 @@ public class Location extends AbstractDomainObject {
 	public static final String FACILITY = "facility";
 	public static final String FACILITY_DETAILS = "facilityDetails";
 	public static final String PERSON = "person";
+	public static final String MAIN_ADDRESS = "mainAddress";
 
 	private String details;
 	private String city;
@@ -92,6 +93,7 @@ public class Location extends AbstractDomainObject {
 	private FacilityType facilityType;
 	private Facility facility;
 	private String facilityDetails;
+	private boolean mainAddress;
 
 	private Person person;
 
@@ -252,6 +254,14 @@ public class Location extends AbstractDomainObject {
 
 	public void setFacilityDetails(String facilityDetails) {
 		this.facilityDetails = facilityDetails;
+	}
+
+	public boolean isMainAddress() {
+		return mainAddress;
+	}
+
+	public void setMainAddress(boolean mainAddress) {
+		this.mainAddress = mainAddress;
 	}
 
 	@ManyToOne(fetch = FetchType.LAZY)

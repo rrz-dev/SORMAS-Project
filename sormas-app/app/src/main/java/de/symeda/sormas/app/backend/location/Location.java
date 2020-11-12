@@ -92,6 +92,8 @@ public class Location extends PseudonymizableAdo {
 	private Facility facility;
 	@Column(length = COLUMN_LENGTH_DEFAULT)
 	private String facilityDetails;
+	@Column
+	private boolean mainAddress;
 
 	/**
 	 * Dirty fix for person-location association; doing this with a JoinTable is not
@@ -240,6 +242,14 @@ public class Location extends PseudonymizableAdo {
 
 	public void setFacilityDetails(String facilityDetails) {
 		this.facilityDetails = facilityDetails;
+	}
+
+	public boolean isMainAddress() {
+		return mainAddress;
+	}
+
+	public void setMainAddress(boolean mainAddress) {
+		this.mainAddress = mainAddress;
 	}
 
 	@JoinTableReference

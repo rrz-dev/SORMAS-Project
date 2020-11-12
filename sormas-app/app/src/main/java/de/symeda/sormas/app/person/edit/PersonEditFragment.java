@@ -62,7 +62,6 @@ import de.symeda.sormas.app.component.Item;
 import de.symeda.sormas.app.component.controls.ControlPropertyField;
 import de.symeda.sormas.app.component.controls.ValueChangeListener;
 import de.symeda.sormas.app.component.dialog.LocationDialog;
-import de.symeda.sormas.app.core.FieldHelper;
 import de.symeda.sormas.app.core.IEntryItemOnClickListener;
 import de.symeda.sormas.app.databinding.FragmentPersonEditLayoutBinding;
 import de.symeda.sormas.app.util.DataUtils;
@@ -265,7 +264,8 @@ public class PersonEditFragment extends BaseEditFragment<FragmentPersonEditLayou
 	private static void openAddressPopup(final Person record, final BaseEditFragment fragment, final FragmentPersonEditLayoutBinding contentBinding) {
 		final Location location = record.getAddress();
 		final Location locationClone = (Location) location.clone();
-		final LocationDialog locationDialog = new LocationDialog(BaseActivity.getActiveActivity(), locationClone, fragment.getFieldAccessCheckers());
+		final LocationDialog locationDialog =
+			new LocationDialog(BaseActivity.getActiveActivity(), locationClone, fragment.getFieldAccessCheckers(), null);
 		locationDialog.show();
 
 		locationDialog.setPositiveCallback(() -> {
@@ -370,11 +370,11 @@ public class PersonEditFragment extends BaseEditFragment<FragmentPersonEditLayou
 		onAddressItemClickListener = (v, item) -> {
 			final Location address = (Location) item;
 			final Location addressClone = (Location) address.clone();
-			final LocationDialog dialog = new LocationDialog(BaseActivity.getActiveActivity(), addressClone, null);
+			final LocationDialog dialog = new LocationDialog(BaseActivity.getActiveActivity(), addressClone, true, null, record.getAddresses());
 
 			dialog.setPositiveCallback(() -> {
 				record.getAddresses().set(record.getAddresses().indexOf(address), addressClone);
-				updateAddresses();
+				updateAddresses(addressClone);
 			});
 
 			dialog.setDeleteCallback(() -> {
@@ -388,7 +388,7 @@ public class PersonEditFragment extends BaseEditFragment<FragmentPersonEditLayou
 
 		getContentBinding().btnAddAddress.setOnClickListener(v -> {
 			final Location address = DatabaseHelper.getLocationDao().build();
-			final LocationDialog dialog = new LocationDialog(BaseActivity.getActiveActivity(), address, null);
+			final LocationDialog dialog = new LocationDialog(BaseActivity.getActiveActivity(), address, true, null, record.getAddresses());
 
 			dialog.setPositiveCallback(() -> addAddress(address));
 
@@ -400,6 +400,17 @@ public class PersonEditFragment extends BaseEditFragment<FragmentPersonEditLayou
 	}
 
 	private void updateAddresses() {
+		updateAddresses(null);
+	}
+
+	private void updateAddresses(Location changedAddress) {
+		if (changedAddress != null && changedAddress.isMainAddress()) {
+			for (Location address : getAddresses()) {
+				if (address.isMainAddress() && !address.getUuid().equals(changedAddress.getUuid())) {
+					address.setMainAddress(false);
+				}
+			}
+		}
 		getContentBinding().setAddressList(getAddresses());
 		getContentBinding().setAddressBindCallback(this::setFieldVisibilitiesAndAccesses);
 	}
@@ -411,7 +422,7 @@ public class PersonEditFragment extends BaseEditFragment<FragmentPersonEditLayou
 
 	private void addAddress(Location item) {
 		record.getAddresses().add(0, item);
-		updateAddresses();
+		updateAddresses((Location) item);
 	}
 
 	// Overrides

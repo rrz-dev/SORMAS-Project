@@ -19,9 +19,12 @@ import static android.view.View.GONE;
 import static de.symeda.sormas.app.core.notification.NotificationType.ERROR;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.util.Log;
 import android.view.View;
 
@@ -32,6 +35,9 @@ import androidx.fragment.app.FragmentActivity;
 import de.symeda.sormas.api.CountryHelper;
 import de.symeda.sormas.api.facility.FacilityType;
 import de.symeda.sormas.api.facility.FacilityTypeGroup;
+import de.symeda.sormas.api.i18n.Captions;
+import de.symeda.sormas.api.i18n.I18nProperties;
+import de.symeda.sormas.api.i18n.Strings;
 import de.symeda.sormas.api.location.AreaType;
 import de.symeda.sormas.api.location.LocationDto;
 import de.symeda.sormas.api.person.PersonAddressType;
@@ -56,19 +62,25 @@ public class LocationDialog extends FormDialog {
 	public static final String TAG = LocationDialog.class.getSimpleName();
 
 	private Location data;
+	private Collection<Location> existingLocations;
 	private DialogLocationLayoutBinding contentBinding;
 
 	// Constructor
 
-	public LocationDialog(final FragmentActivity activity, Location location, UiFieldAccessCheckers fieldAccessCheckers) {
-		this(activity, location, true, fieldAccessCheckers);
+	public LocationDialog(
+		final FragmentActivity activity,
+		Location location,
+		UiFieldAccessCheckers fieldAccessCheckers,
+		Collection<Location> existingLocations) {
+		this(activity, location, true, fieldAccessCheckers, existingLocations);
 	}
 
 	public LocationDialog(
 		final FragmentActivity activity,
 		Location location,
 		boolean closeOnPositiveButtonClick,
-		UiFieldAccessCheckers fieldAccessCheckers) {
+		UiFieldAccessCheckers fieldAccessCheckers,
+		Collection<Location> existingLocations) {
 		super(
 			activity,
 			R.layout.dialog_root_layout,
@@ -80,6 +92,7 @@ public class LocationDialog extends FormDialog {
 			fieldAccessCheckers);
 
 		this.data = location;
+		this.existingLocations = existingLocations;
 	}
 
 	// Overrides
@@ -165,6 +178,33 @@ public class LocationDialog extends FormDialog {
 		} else {
 			contentBinding.facilityTypeGroup.setValue(data.getFacilityType().getFacilityTypeGroup());
 		}
+
+		contentBinding.locationMainAddress.addValueChangedListener(e -> {
+			if (Boolean.TRUE.equals(contentBinding.locationMainAddress.getValue())
+				&& existingLocations != null
+				&& getMainAddress() != null
+				&& !getMainAddress().getUuid().equals(data.getUuid())) {
+				AlertDialog alertDialog = new AlertDialog.Builder(getContext()).create();
+				alertDialog.setTitle(I18nProperties.getCaption(Captions.warning));
+				alertDialog.setMessage(I18nProperties.getString(Strings.messageMainAddressExisting));
+				alertDialog.setButton(
+					AlertDialog.BUTTON_NEUTRAL,
+					I18nProperties.getCaption(Captions.actionOkay),
+					(DialogInterface.OnClickListener) (dialog, which) -> dialog.dismiss());
+				alertDialog.show();
+			}
+		});
+	}
+
+	public Location getMainAddress() {
+		if (existingLocations != null) {
+			for (Location location : existingLocations) {
+				if (location.isMainAddress()) {
+					return location;
+				}
+			}
+		}
+		return null;
 	}
 
 	public void setRegionAndDistrictRequired(boolean required) {

@@ -142,7 +142,7 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 	public static final String DATABASE_NAME = "sormas.db";
 	// any time you make changes to your database objects, you may have to increase the database version
 
-	public static final int DATABASE_VERSION = 242;
+	public static final int DATABASE_VERSION = 243;
 
 	private static DatabaseHelper instance = null;
 
@@ -1637,8 +1637,7 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 
 				getDao(Location.class).executeRaw("ALTER TABLE location ADD COLUMN facilityType varchar(255);");
 				getDao(Location.class).executeRaw("ALTER TABLE location ADD COLUMN facility_id bigint REFERENCES facility(id);");
-				getDao(Location.class).executeRaw("ALTER TABLE location ADD COLUMN facilityDetails varchar(512);");
-
+				getDao(Location.class).executeRaw("ALTER TABLE location ADD COLUMN facilityDetails varchar(512);"); {
 				GenericRawResults<Object[]> rawResult = getDao(Person.class).queryRaw(
 					"SELECT occupationRegion_id, occupationDistrict_id, occupationCommunity_id, occupationFacility_id, occupationFacilityDetails, occupationFacilityType, id FROM person WHERE changeDate IS 0 AND (occupationRegion_id IS NOT NULL OR occupationFacilityType IS NOT NULL);",
 					new DataType[] {
@@ -1686,6 +1685,7 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 				TableUtils.createTable(connectionSource, Person.class);
 				db.execSQL("INSERT INTO person (" + personQueryColumns + ") SELECT " + personQueryColumns + " FROM person_old;");
 				db.execSQL("DROP TABLE person_old;");
+			}
 
 			case 232:
 				currentVersion = 232;
@@ -1746,6 +1746,10 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 					.executeRaw("ALTER TABLE diseaseConfiguration ADD COLUMN eventParticipantFollowUpDuration integer;");
 				getDao(DiseaseConfiguration.class).executeRaw("UPDATE diseaseConfiguration SET caseFollowUpDuration = followUpDuration;");
 				getDao(DiseaseConfiguration.class).executeRaw("UPDATE diseaseConfiguration SET eventParticipantFollowUpDuration = followUpDuration;");
+
+			case 242:
+				currentVersion = 242;
+				getDao(Location.class).executeRaw("ALTER TABLE location ADD COLUMN mainAddress boolean default false;");
 
 				// ATTENTION: break should only be done after last version
 				break;

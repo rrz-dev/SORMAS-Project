@@ -637,6 +637,7 @@ public interface Strings {
 	String messageLineListingDisabled = "messageLineListingDisabled";
 	String messageLineListingSaved = "messageLineListingSaved";
 	String messageLoginFailed = "messageLoginFailed";
+	String messageMainAddressExisting = "messageMainAddressExisting";
 	String messageMissingDateFilter = "messageMissingDateFilter";
 	String messageMissingEpiWeekFilter = "messageMissingEpiWeekFilter";
 	String messageNoCaseFound = "messageNoCaseFound";

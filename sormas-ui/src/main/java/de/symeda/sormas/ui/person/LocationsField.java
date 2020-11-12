@@ -41,7 +41,7 @@ public class LocationsField extends AbstractTableField<LocationDto> {
 			entry.setUuid(DataHelper.createUuid());
 		}
 
-		LocationEditForm editForm = new LocationEditForm(fieldVisibilityCheckers, fieldAccessCheckers);
+		LocationEditForm editForm = new LocationEditForm(fieldVisibilityCheckers, fieldAccessCheckers, getValue());
 		editForm.showAddressType();
 		editForm.setValue(entry);
 
@@ -53,6 +53,13 @@ public class LocationsField extends AbstractTableField<LocationDto> {
 
 		editView.addCommitListener(() -> {
 			if (!editForm.getFieldGroup().isModified()) {
+				if (entry.isMainAddress()) {
+					for (LocationDto locationDto : getValue()) {
+						if (locationDto.isMainAddress() && !locationDto.getUuid().equals(entry.getUuid())) {
+							locationDto.setMainAddress(false);
+						}
+					}
+				}
 				commitCallback.accept(editForm.getValue());
 			}
 		});
@@ -85,6 +92,7 @@ public class LocationsField extends AbstractTableField<LocationDto> {
 		table.setVisibleColumns(
 			EDIT_COLUMN_ID,
 			LocationDto.ADDRESS_TYPE,
+			LocationDto.MAIN_ADDRESS,
 			STREET,
 			LocationDto.CITY,
 			LocationDto.POSTAL_CODE,
@@ -93,6 +101,7 @@ public class LocationsField extends AbstractTableField<LocationDto> {
 
 		table.setColumnExpandRatio(EDIT_COLUMN_ID, 0);
 		table.setColumnExpandRatio(LocationDto.ADDRESS_TYPE, 0);
+		table.setColumnExpandRatio(LocationDto.MAIN_ADDRESS, 0);
 		table.setColumnExpandRatio(STREET, 0);
 		table.setColumnExpandRatio(LocationDto.CITY, 0);
 		table.setColumnExpandRatio(LocationDto.POSTAL_CODE, 0);
@@ -135,6 +144,8 @@ public class LocationsField extends AbstractTableField<LocationDto> {
 		if (isModifiedObject(oldEntry.getLatLonAccuracy(), newEntry.getLatLonAccuracy()))
 			return true;
 		if (isModifiedObject(oldEntry.getLongitude(), newEntry.getLongitude()))
+			return true;
+		if (isModifiedObject(oldEntry.isMainAddress(), newEntry.isMainAddress()))
 			return true;
 		if (isModifiedObject(oldEntry.getPostalCode(), newEntry.getPostalCode()))
 			return true;

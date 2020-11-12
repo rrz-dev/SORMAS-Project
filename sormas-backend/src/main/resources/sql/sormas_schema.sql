@@ -5552,4 +5552,10 @@ UPDATE diseaseconfiguration SET casefollowupduration = followupduration;
 UPDATE diseaseconfiguration SET eventparticipantfollowupduration = followupduration;
 
 INSERT INTO schema_version (version_number, comment) VALUES (275, 'Split follow-up duration #3100');
+
+-- 2020-11-09 Add main address flag to location #2869
+ALTER TABLE location ADD COLUMN mainaddress boolean default false;
+ALTER TABLE location_history ADD COLUMN mainaddress boolean;
+
+INSERT INTO schema_version (version_number, comment) VALUES (276, 'Add main address flag to location #2869');
 -- *** Insert new sql commands BEFORE this line ***

@@ -670,4 +670,15 @@ public class PersonDto extends PseudonymizableDto {
 		person.setAddress(LocationDto.build());
 		return person;
 	}
+
+	public LocationDto getMainAddress() {
+		if (addresses != null) {
+			for (LocationDto locationDto : addresses) {
+				if (locationDto.isMainAddress()) {
+					return locationDto;
+				}
+			}
+		}
+		return null;
+	}
 }

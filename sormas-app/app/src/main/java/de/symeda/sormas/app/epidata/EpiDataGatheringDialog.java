@@ -71,7 +71,7 @@ public class EpiDataGatheringDialog extends FormDialog {
 	private void openAddressPopup() {
 		final Location location = (Location) contentBinding.epiDataGatheringGatheringAddress.getValue();
 		final Location locationClone = (Location) location.clone();
-		final LocationDialog locationDialog = new LocationDialog(BaseActivity.getActiveActivity(), locationClone, fieldAccessCheckers);
+		final LocationDialog locationDialog = new LocationDialog(BaseActivity.getActiveActivity(), locationClone, fieldAccessCheckers, null);
 		locationDialog.show();
 
 		locationDialog.setPositiveCallback(() -> {

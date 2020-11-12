@@ -71,7 +71,7 @@ public class EpiDataBurialDialog extends FormDialog {
 	private void openAddressPopup() {
 		final Location location = (Location) contentBinding.epiDataBurialBurialAddress.getValue();
 		final Location locationClone = (Location) location.clone();
-		final LocationDialog locationDialog = new LocationDialog(BaseActivity.getActiveActivity(), locationClone, null);
+		final LocationDialog locationDialog = new LocationDialog(BaseActivity.getActiveActivity(), locationClone, null, null);
 		locationDialog.show();
 
 		locationDialog.setPositiveCallback(() -> {

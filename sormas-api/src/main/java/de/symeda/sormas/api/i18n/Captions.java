@@ -1011,6 +1011,7 @@ public interface Captions {
 	String Location_latLon = "Location.latLon";
 	String Location_latLonAccuracy = "Location.latLonAccuracy";
 	String Location_longitude = "Location.longitude";
+	String Location_mainAddress = "Location.mainAddress";
 	String Location_postalCode = "Location.postalCode";
 	String Location_street = "Location.street";
 	String Login_doLogIn = "Login.doLogIn";
@@ -1749,6 +1750,7 @@ public interface Captions {
 	String Visit_visitStatus = "Visit.visitStatus";
 	String Visit_visitUser = "Visit.visitUser";
 	String visitNewVisit = "visitNewVisit";
+	String warning = "warning";
 	String WeeklyReport_epiWeek = "WeeklyReport.epiWeek";
 	String WeeklyReport_year = "WeeklyReport.year";
 	String WeeklyReportEntry_numberOfCases = "WeeklyReportEntry.numberOfCases";

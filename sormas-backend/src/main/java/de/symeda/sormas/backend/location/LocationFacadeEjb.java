@@ -89,6 +89,7 @@ public class LocationFacadeEjb implements LocationFacade {
 		target.setFacility(facilityService.getByReferenceDto(source.getFacility()));
 		target.setFacilityDetails(source.getFacilityDetails());
 		target.setFacilityType(source.getFacilityType());
+		target.setMainAddress(source.isMainAddress());
 
 		return target;
 	}
@@ -123,6 +124,7 @@ public class LocationFacadeEjb implements LocationFacade {
 		target.setFacility(FacilityFacadeEjb.toReferenceDto(source.getFacility()));
 		target.setFacilityDetails(source.getFacilityDetails());
 		target.setFacilityType(source.getFacilityType());
+		target.setMainAddress(source.isMainAddress());
 
 		return target;
 	}
