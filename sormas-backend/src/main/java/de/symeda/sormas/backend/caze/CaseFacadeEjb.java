@@ -1435,16 +1435,22 @@ public class CaseFacadeEjb implements CaseFacade {
 
 	public CaseDataDto saveCase(CaseDataDto dto, boolean handleChanges) throws ValidationRuntimeException {
 
+		long startTime = DateHelper.startTime();
+
 		Case caze = caseService.getByUuid(dto.getUuid());
 		CaseDataDto existingCaseDto = handleChanges ? toDto(caze) : null;
 
 		SymptomsHelper.updateIsSymptomatic(dto.getSymptoms());
+		logger.trace("saveCase: updateIsSymptomatic finished. {} ms", DateHelper.durationMillies(startTime));
 
 		restorePseudonymizedDto(dto, caze, existingCaseDto);
+		logger.trace("saveCase: restorePseudonymizedDto finished. {} ms", DateHelper.durationMillies(startTime));
 
 		validate(dto);
+		logger.trace("saveCase: validate finished. {} ms", DateHelper.durationMillies(startTime));
 
 		caze = fillOrBuildEntity(dto, caze);
+		logger.trace("saveCase: fillOrBuildEntity finished. {} ms", DateHelper.durationMillies(startTime));
 
 		// Set version number on a new case
 		if (caze.getCreationDate() == null && StringUtils.isEmpty(dto.getCreationVersion())) {
@@ -1452,14 +1458,24 @@ public class CaseFacadeEjb implements CaseFacade {
 		}
 
 		caseService.ensurePersisted(caze);
+		logger.trace("saveCase: ensurePersisted finished. {} ms", DateHelper.durationMillies(startTime));
+
 		if (handleChanges) {
 			updateCaseVisitAssociations(existingCaseDto, caze);
+			logger.trace("saveCase: updateCaseVisitAssociations finished. {} ms", DateHelper.durationMillies(startTime));
+
 			caseService.updateFollowUpUntilAndStatus(caze);
+			logger.trace("saveCase: updateFollowUpUntilAndStatus finished. {} ms", DateHelper.durationMillies(startTime));
 
 			onCaseChanged(existingCaseDto, caze);
+			logger.trace("saveCase: onCaseChanged finished. {} ms", DateHelper.durationMillies(startTime));
 		}
+		logger.trace("saveCase: handleChanges finished. {} ms", DateHelper.durationMillies(startTime));
 
-		return convertToDto(caze, Pseudonymizer.getDefault(userService::hasRight));
+		CaseDataDto updatedDto = convertToDto(caze, Pseudonymizer.getDefault(userService::hasRight));
+		logger.trace("saveCase: updatedDto generated. {} ms", DateHelper.durationMillies(startTime));
+
+		return updatedDto;
 	}
 
 	private void updateCaseVisitAssociations(CaseDataDto existingCase, Case caze) {
