@@ -777,7 +777,7 @@ public class SormasToSormasFacadeEjb implements SormasToSormasFacade {
 
 		person.setUuid(DataHelper.createUuid());
 
-		LocationDto address = person.getAddress();
+		LocationDto address = person.getMainAddress() != null ? person.getMainAddress() : new LocationDto();
 		address.setUuid(DataHelper.createUuid());
 
 		DataHelper.Pair<InfrastructureData, List<String>> infrastructureAndErrors =

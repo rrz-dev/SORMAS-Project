@@ -401,10 +401,14 @@ public class ContactService extends AbstractCoreAdoService<Contact> {
 		CriteriaQuery<MapContactDto> cq = cb.createQuery(MapContactDto.class);
 		Root<Contact> contact = cq.from(getElementClass());
 		Join<Contact, Person> person = contact.join(Contact.PERSON, JoinType.LEFT);
-		Join<Person, Location> contactPersonAddress = person.join(Person.ADDRESS, JoinType.LEFT);
 		Join<Contact, Case> caze = contact.join(Contact.CAZE, JoinType.LEFT);
 		Join<Case, Person> casePerson = caze.join(Case.PERSON, JoinType.LEFT);
 		Join<Case, Symptoms> symptoms = caze.join(Case.SYMPTOMS, JoinType.LEFT);
+
+		Subquery<Location> addressSq = cq.subquery(Location.class);
+		Root<Person> personRoot = addressSq.from(Person.class);
+		Join<Person, Location> locationJoin = personRoot.join(Person.ADDRESSES, JoinType.LEFT);
+		addressSq.where(cb.isTrue(locationJoin.get(Location.MAIN_ADDRESS)));
 
 		Predicate filter = createMapContactsFilter(cb, cq, contact, caze, region, district, disease, caseUuids);
 
@@ -416,8 +420,8 @@ public class ContactService extends AbstractCoreAdoService<Contact> {
 				contact.get(Contact.CONTACT_CLASSIFICATION),
 				contact.get(Contact.REPORT_LAT),
 				contact.get(Contact.REPORT_LON),
-				contactPersonAddress.get(Location.LATITUDE),
-				contactPersonAddress.get(Location.LONGITUDE),
+				addressSq.select(locationJoin.get(Location.LATITUDE)),
+				addressSq.select(locationJoin.get(Location.LONGITUDE)),
 				symptoms.get(Symptoms.ONSET_DATE),
 				caze.get(Case.REPORT_DATE),
 				contact.get(Contact.REPORT_DATE_TIME),
@@ -1101,7 +1105,7 @@ public class ContactService extends AbstractCoreAdoService<Contact> {
 		}
 		if (contactCriteria.getNameUuidCaseLike() != null) {
 			Join<Contact, Person> person = joins.getPerson();
-			Join<Person, Location> location = joins.getAddress();
+			Join<Person, Location> locations = joins.getPersonAddresses();
 			Join<Case, Person> casePerson = caze.join(Case.PERSON, JoinType.LEFT);
 			String[] textFilters = contactCriteria.getNameUuidCaseLike().split("\\s+");
 			for (int i = 0; i < textFilters.length; i++) {
@@ -1115,8 +1119,8 @@ public class ContactService extends AbstractCoreAdoService<Contact> {
 						cb.like(cb.lower(casePerson.get(Person.FIRST_NAME)), textFilter),
 						cb.like(cb.lower(casePerson.get(Person.LAST_NAME)), textFilter),
 						phoneNumberPredicate(cb, person.get(Person.PHONE), textFilter),
-						cb.like(cb.lower(location.get(Location.CITY)), textFilter),
-						cb.like(cb.lower(location.get(Location.POSTAL_CODE)), textFilter));
+						cb.like(cb.lower(locations.get(Location.CITY)), textFilter),
+						cb.like(cb.lower(locations.get(Location.POSTAL_CODE)), textFilter));
 					filter = and(cb, filter, likeFilters);
 				}
 			}

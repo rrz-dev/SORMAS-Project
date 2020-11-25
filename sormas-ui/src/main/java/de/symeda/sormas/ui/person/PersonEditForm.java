@@ -73,7 +73,6 @@ import de.symeda.sormas.api.utils.DateHelper;
 import de.symeda.sormas.api.utils.fieldaccess.UiFieldAccessCheckers;
 import de.symeda.sormas.api.utils.fieldvisibility.FieldVisibilityCheckers;
 import de.symeda.sormas.api.utils.fieldvisibility.checkers.CountryFieldVisibilityChecker;
-import de.symeda.sormas.ui.location.LocationEditForm;
 import de.symeda.sormas.ui.utils.AbstractEditForm;
 import de.symeda.sormas.ui.utils.ApproximateAgeValidator;
 import de.symeda.sormas.ui.utils.CssStyles;
@@ -94,7 +93,6 @@ public class PersonEditForm extends AbstractEditForm<PersonDto> {
 	private static final String CONTACT_INFORMATION_HEADER = "contactInformationHeader";
 
 	private Label occupationHeader = new Label(I18nProperties.getString(Strings.headingPersonOccupation));
-	private Label addressHeader = new Label(I18nProperties.getPrefixCaption(PersonDto.I18N_PREFIX, PersonDto.ADDRESS));
 	private Label addressesHeader = new Label(I18nProperties.getPrefixCaption(PersonDto.I18N_PREFIX, PersonDto.ADDRESSES));
 	private Label contactInformationHeader = new Label(I18nProperties.getString(Strings.headingContactInformation));
 
@@ -149,10 +147,7 @@ public class PersonEditForm extends AbstractEditForm<PersonDto> {
                             fluidRowLocs(PersonDto.EDUCATION_TYPE, PersonDto.EDUCATION_DETAILS)
                     ) +
 
-                    loc(ADDRESS_HEADER) +
-                    divsCss(VSPACE_3, fluidRowLocs(PersonDto.ADDRESS)) +
-
-					loc(ADDRESSES_HEADER) +
+                    loc(ADDRESSES_HEADER) +
 					fluidRowLocs(PersonDto.ADDRESSES) +
 
                     loc(CONTACT_INFORMATION_HEADER) +
@@ -180,9 +175,8 @@ public class PersonEditForm extends AbstractEditForm<PersonDto> {
 		this.diseaseDetails = diseaseDetails;
 		this.viewMode = viewMode;
 
-		CssStyles.style(CssStyles.H3, occupationHeader, addressHeader, addressesHeader, contactInformationHeader);
+		CssStyles.style(CssStyles.H3, occupationHeader, addressesHeader, contactInformationHeader);
 		getContent().addComponent(occupationHeader, OCCUPATION_HEADER);
-		getContent().addComponent(addressHeader, ADDRESS_HEADER);
 		getContent().addComponent(addressesHeader, ADDRESSES_HEADER);
 		getContent().addComponent(contactInformationHeader, CONTACT_INFORMATION_HEADER);
 
@@ -248,7 +242,6 @@ public class PersonEditForm extends AbstractEditForm<PersonDto> {
 		DateField burialDate = addField(PersonDto.BURIAL_DATE, DateField.class);
 		TextField burialPlaceDesc = addField(PersonDto.BURIAL_PLACE_DESCRIPTION, TextField.class);
 		ComboBox burialConductor = addField(PersonDto.BURIAL_CONDUCTOR, ComboBox.class);
-		addField(PersonDto.ADDRESS, LocationEditForm.class).setCaption(null);
 		LocationsField addresses = addField(PersonDto.ADDRESSES, LocationsField.class);
 		addresses.setCaption(null);
 
@@ -323,8 +316,6 @@ public class PersonEditForm extends AbstractEditForm<PersonDto> {
 
 		if (!getField(PersonDto.OCCUPATION_TYPE).isVisible() && !getField(PersonDto.EDUCATION_TYPE).isVisible())
 			occupationHeader.setVisible(false);
-		if (!getField(PersonDto.ADDRESS).isVisible())
-			addressHeader.setVisible(false);
 		if (!getField(PersonDto.ADDRESSES).isVisible())
 			addressesHeader.setVisible(false);
 
@@ -747,13 +738,13 @@ public class PersonEditForm extends AbstractEditForm<PersonDto> {
 
 		if (deathPlaceType.isVisible() && deathPlaceType.getValue() == null) {
 			deathPlaceType.setValue(DeathPlaceType.OTHER);
-			if (deathPlaceDesc.isVisible() && StringUtils.isBlank(deathPlaceDesc.getValue())) {
-				deathPlaceDesc.setValue(getValue().getAddress().toString());
+			if (deathPlaceDesc.isVisible() && StringUtils.isBlank(deathPlaceDesc.getValue()) && getValue().getMainAddress() != null) {
+				deathPlaceDesc.setValue(getValue().getMainAddress().toString());
 			}
 		}
 
-		if (burialPlaceDesc.isVisible() && StringUtils.isBlank(burialPlaceDesc.getValue())) {
-			burialPlaceDesc.setValue(getValue().getAddress().toString());
+		if (burialPlaceDesc.isVisible() && StringUtils.isBlank(burialPlaceDesc.getValue()) && getValue().getMainAddress() != null) {
+			burialPlaceDesc.setValue(getValue().getMainAddress().toString());
 		}
 	}
 

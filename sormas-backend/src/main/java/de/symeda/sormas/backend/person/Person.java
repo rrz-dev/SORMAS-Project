@@ -34,7 +34,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
@@ -86,7 +85,6 @@ public class Person extends AbstractDomainObject {
 	public static final String BURIAL_DATE = "burialDate";
 	public static final String BURIAL_PLACE_DESCRIPTION = "burialPlaceDescription";
 	public static final String BURIAL_CONDUCTOR = "burialConductor";
-	public static final String ADDRESS = "address";
 	public static final String SEX = "sex";
 	public static final String DEATH_DATE = "deathDate";
 	public static final String PRESENT_CONDITION = "presentCondition";
@@ -140,7 +138,6 @@ public class Person extends AbstractDomainObject {
 	private String burialPlaceDescription;
 	private BurialConductor burialConductor;
 
-	private Location address;
 	private String phone;
 	private String phoneOwner;
 	private String emailAddress;
@@ -296,18 +293,6 @@ public class Person extends AbstractDomainObject {
 
 	public void setBurialPlaceDescription(String burialPlaceDescription) {
 		this.burialPlaceDescription = burialPlaceDescription;
-	}
-
-	@OneToOne(cascade = CascadeType.ALL)
-	public Location getAddress() {
-		if (address == null) {
-			address = new Location();
-		}
-		return address;
-	}
-
-	public void setAddress(Location address) {
-		this.address = address;
 	}
 
 	public String getPhone() {
@@ -663,5 +648,16 @@ public class Person extends AbstractDomainObject {
 	@Override
 	public String toString() {
 		return PersonDto.buildCaption(firstName, lastName);
+	}
+
+	public Location getMainAddress() {
+		if (addresses != null) {
+			for (Location location : addresses) {
+				if (location.isMainAddress()) {
+					return location;
+				}
+			}
+		}
+		return null;
 	}
 }

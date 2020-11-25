@@ -1094,7 +1094,6 @@ public interface Captions {
 	String patientDiaryPersonNotExportable = "patientDiaryPersonNotExportable";
 	String patientDiaryRegistrationError = "patientDiaryRegistrationError";
 	String Person = "Person";
-	String Person_address = "Person.address";
 	String Person_addresses = "Person.addresses";
 	String Person_ageAndBirthDate = "Person.ageAndBirthDate";
 	String Person_approximateAge = "Person.approximateAge";

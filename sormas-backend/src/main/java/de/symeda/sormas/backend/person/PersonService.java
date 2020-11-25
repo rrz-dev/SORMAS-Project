@@ -43,7 +43,6 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
 
-import de.symeda.sormas.api.person.PersonDto;
 import org.apache.commons.lang3.StringUtils;
 
 import de.symeda.sormas.api.Disease;
@@ -96,9 +95,9 @@ public class PersonService extends AbstractAdoService<Person> {
 		// persons by LGA
 		CriteriaQuery<String> lgaQuery = cb.createQuery(String.class);
 		Root<Person> lgaRoot = lgaQuery.from(Person.class);
-		Join<Person, Location> address = lgaRoot.join(Person.ADDRESS);
+		Join<Person, Location> addresses = lgaRoot.join(Person.ADDRESSES);
 		lgaQuery.select(lgaRoot.get(Person.UUID));
-		Predicate lgaFilter = cb.equal(address.get(Location.DISTRICT), getCurrentUser().getDistrict());
+		Predicate lgaFilter = cb.equal(addresses.get(Location.DISTRICT), getCurrentUser().getDistrict());
 		lgaQuery.where(lgaFilter);
 		List<String> lgaResultList = em.createQuery(lgaQuery).getResultList();
 
@@ -152,8 +151,8 @@ public class PersonService extends AbstractAdoService<Person> {
 		// persons by LGA
 		CriteriaQuery<Person> personsQuery = cb.createQuery(Person.class);
 		Root<Person> personsRoot = personsQuery.from(Person.class);
-		Join<Person, Location> address = personsRoot.join(Person.ADDRESS);
-		Predicate lgaFilter = cb.equal(address.get(Location.DISTRICT), user.getDistrict());
+		Join<Person, Location> addresses = personsRoot.join(Person.ADDRESSES);
+		Predicate lgaFilter = cb.equal(addresses.get(Location.DISTRICT), user.getDistrict());
 		// date range
 		if (date != null) {
 			Predicate dateFilter = createChangeDateFilter(cb, personsRoot, DateHelper.toTimestampUpper(date));
@@ -166,7 +165,7 @@ public class PersonService extends AbstractAdoService<Person> {
 		CriteriaQuery<Person> casePersonsQuery = cb.createQuery(Person.class);
 		Root<Case> casePersonsRoot = casePersonsQuery.from(Case.class);
 		Join<Person, Person> casePersonsSelect = casePersonsRoot.join(Case.PERSON);
-		casePersonsSelect.fetch(Person.ADDRESS);
+		casePersonsSelect.fetch(Person.ADDRESSES);
 		casePersonsQuery.select(casePersonsSelect);
 		Predicate casePersonsFilter = caseService.createUserFilter(cb, casePersonsQuery, casePersonsRoot);
 		// date range
@@ -190,7 +189,7 @@ public class PersonService extends AbstractAdoService<Person> {
 		CriteriaQuery<Person> contactPersonsQuery = cb.createQuery(Person.class);
 		Root<Contact> contactPersonsRoot = contactPersonsQuery.from(Contact.class);
 		Join<Person, Person> contactPersonsSelect = contactPersonsRoot.join(Contact.PERSON);
-		contactPersonsSelect.fetch(Person.ADDRESS);
+		contactPersonsSelect.fetch(Person.ADDRESSES);
 		contactPersonsQuery.select(contactPersonsSelect);
 		Predicate contactPersonsFilter = contactService.createUserFilter(cb, contactPersonsQuery, contactPersonsRoot);
 		// date range
@@ -209,7 +208,7 @@ public class PersonService extends AbstractAdoService<Person> {
 		CriteriaQuery<Person> eventPersonsQuery = cb.createQuery(Person.class);
 		Root<EventParticipant> eventPersonsRoot = eventPersonsQuery.from(EventParticipant.class);
 		Join<Person, Person> eventPersonsSelect = eventPersonsRoot.join(EventParticipant.PERSON);
-		eventPersonsSelect.fetch(Person.ADDRESS);
+		eventPersonsSelect.fetch(Person.ADDRESSES);
 		eventPersonsQuery.select(eventPersonsSelect);
 		Predicate eventPersonsFilter = eventParticipantService.createUserFilter(cb, eventPersonsQuery, eventPersonsRoot);
 		// date range
@@ -383,13 +382,13 @@ public class PersonService extends AbstractAdoService<Person> {
 		return casePersonsResultList;
 	}
 
-	public Location getAddressByPersonId(long personId) {
+	public Location getMainAddressByPersonId(long personId) {
 
 		CriteriaBuilder cb = em.getCriteriaBuilder();
 		CriteriaQuery<Location> cq = cb.createQuery(Location.class);
-		Root<Person> root = cq.from(getElementClass());
-		cq.where(cb.equal(root.get(Person.ID), personId));
-		cq.select(root.get(Person.ADDRESS));
+		Root<Location> root = cq.from(Location.class);
+		cq.where(cb.and(cb.equal(root.get(Location.PERSON), personId), cb.isTrue(root.get(Location.MAIN_ADDRESS))));
+		cq.select(root.get(Person.ADDRESSES));
 		Location result = em.createQuery(cq).getSingleResult();
 		return result;
 	}
@@ -456,12 +455,8 @@ public class PersonService extends AbstractAdoService<Person> {
 	public Predicate createChangeDateFilter(CriteriaBuilder cb, From<?, Person> from, Timestamp date) {
 
 		Predicate dateFilter = cb.greaterThan(from.get(AbstractDomainObject.CHANGE_DATE), date);
-		Join<Person, Location> address = from.join(Person.ADDRESS);
-		dateFilter = cb.or(dateFilter, cb.greaterThan(address.get(AbstractDomainObject.CHANGE_DATE), date));
+		Join<Person, Location> addresses = from.join(Person.ADDRESSES, JoinType.LEFT);
+		dateFilter = cb.or(dateFilter, cb.greaterThan(addresses.get(AbstractDomainObject.CHANGE_DATE), date));
 		return dateFilter;
-	}
-
-	public void notifyExternalJournalPersonUpdate(PersonDto existingPerson, PersonDto updatedPerson) {
-
 	}
 }

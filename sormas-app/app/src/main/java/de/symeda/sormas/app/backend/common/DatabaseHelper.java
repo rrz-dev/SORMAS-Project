@@ -1751,6 +1751,29 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 				currentVersion = 242;
 				getDao(Location.class).executeRaw("ALTER TABLE location ADD COLUMN mainAddress boolean default false;");
 
+				GenericRawResults<Object[]> rawResult = getDao(Person.class).queryRaw(
+					"SELECT address_id, id FROM person WHERE changeDate IS 0 address_id IS NOT NULL;",
+					new DataType[] {
+						DataType.BIG_INTEGER,
+						DataType.INTEGER });
+
+				for (Object[] result : rawResult) {
+					String query = "UPDATE location SET person_id = " + result[0] + " WHERE id = " + result[1] + ";";
+					getDao(Location.class).executeRaw(query);
+				}
+
+				Cursor personDbCursor = db.query(Person.TABLE_NAME, null, null, null, null, null, null);
+				String[] personColumnNames = personDbCursor.getColumnNames();
+				personDbCursor.close();
+				List personColumnList = new ArrayList(Arrays.asList(personColumnNames));
+				personColumnList.remove("address_id");
+				String personQueryColumns = TextUtils.join(",", personColumnList);
+
+				db.execSQL("ALTER TABLE person RENAME TO person_old;");
+				TableUtils.createTable(connectionSource, Person.class);
+				db.execSQL("INSERT INTO person (" + personQueryColumns + ") SELECT " + personQueryColumns + " FROM person_old;");
+				db.execSQL("DROP TABLE person_old;");
+
 				// ATTENTION: break should only be done after last version
 				break;
 			default:

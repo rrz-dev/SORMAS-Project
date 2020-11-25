@@ -5557,5 +5557,15 @@ INSERT INTO schema_version (version_number, comment) VALUES (275, 'Split follow-
 ALTER TABLE location ADD COLUMN mainaddress boolean default false;
 ALTER TABLE location_history ADD COLUMN mainaddress boolean;
 
+
+CREATE temp table t_id_map
+AS SELECT id AS person_id, address_id AS location_id FROM person WHERE address_id IS NOT NULL;
+
+UPDATE location SET addresstype = 'HOME', mainaddress = true WHERE id IN (SELECT location_id FROM t_id_map);
+
+INSERT INTO person_locations (person_id, location_id) SELECT person_id, location_id FROM t_id_map;
+
+ALTER TABLE person DROP COLUMN address_id;
+
 INSERT INTO schema_version (version_number, comment) VALUES (276, 'Add main address flag to location #2869');
 -- *** Insert new sql commands BEFORE this line ***

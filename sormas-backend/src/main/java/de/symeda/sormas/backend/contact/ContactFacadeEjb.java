@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -426,6 +427,16 @@ public class ContactFacadeEjb implements ContactFacade {
 				cb.isFalse(eventCountRoot.get(EventParticipant.DELETED))));
 		eventCountSq.select(cb.countDistinct(eventJoin.get(Event.ID)));
 
+		// Address subquery
+		Subquery<Location> addressSq = cq.subquery(Location.class);
+		Root<Person> personRoot = addressSq.from(Person.class);
+		Join<Person, Location> locationJoin = personRoot.join(Person.ADDRESSES, JoinType.LEFT);
+		Join<Location, Region> regionJoin = locationJoin.join(Location.REGION, JoinType.LEFT);
+		Join<Location, District> districtJoin = locationJoin.join(Location.DISTRICT, JoinType.LEFT);
+		Join<Location, Community> communityJoin = locationJoin.join(Location.COMMUNITY, JoinType.LEFT);
+		Join<Location, Facility> facilityJoin = locationJoin.join(Location.FACILITY, JoinType.LEFT);
+		addressSq.where(cb.isTrue(locationJoin.get(Location.MAIN_ADDRESS)));
+
 		cq.multiselect(
 			Stream.concat(
 				Stream.of(
@@ -470,17 +481,17 @@ public class ContactFacadeEjb implements ContactFacade {
 					contact.get(Contact.QUARANTINE_OFFICIAL_ORDER_SENT_DATE),
 					joins.getPerson().get(Person.PRESENT_CONDITION),
 					joins.getPerson().get(Person.DEATH_DATE),
-					joins.getAddressRegion().get(Region.NAME),
-					joins.getAddressDistrict().get(District.NAME),
-					joins.getAddressCommunity().get(Community.NAME),
-					joins.getAddress().get(Location.CITY),
-					joins.getAddress().get(Location.STREET),
-					joins.getAddress().get(Location.HOUSE_NUMBER),
-					joins.getAddress().get(Location.ADDITIONAL_INFORMATION),
-					joins.getAddress().get(Location.POSTAL_CODE),
-					joins.getAddressFacility().get(Facility.NAME),
-					joins.getAddressFacility().get(Facility.UUID),
-					joins.getAddress().get(Location.FACILITY_DETAILS),
+					addressSq.select(regionJoin.get(Region.NAME)),
+					addressSq.select(districtJoin.get(District.NAME)),
+					addressSq.select(communityJoin.get(Community.NAME)),
+					addressSq.select(locationJoin.get(Location.CITY)),
+					addressSq.select(locationJoin.get(Location.STREET)),
+					addressSq.select(locationJoin.get(Location.HOUSE_NUMBER)),
+					addressSq.select(locationJoin.get(Location.ADDITIONAL_INFORMATION)),
+					addressSq.select(locationJoin.get(Location.POSTAL_CODE)),
+					addressSq.select(facilityJoin.get(Facility.NAME)),
+					addressSq.select(facilityJoin.get(Facility.UUID)),
+					addressSq.select(locationJoin.get(Location.FACILITY_DETAILS)),
 					joins.getPerson().get(Person.PHONE),
 					joins.getPerson().get(Person.PHONE_OWNER),
 					joins.getPerson().get(Person.OCCUPATION_TYPE),
@@ -495,7 +506,7 @@ public class ContactFacadeEjb implements ContactFacade {
 					joins.getEpiData().get(EpiData.DIRECT_CONTACT_PROBABLE_CASE),
 					joins.getEpiData().get(EpiData.RODENTS),
 					contact.get(Contact.RETURNING_TRAVELER),
-					eventCountSq,
+					addressSq,
 					contact.get(Contact.EXTERNAL_ID)),
 				listCriteriaBuilder.getJurisdictionSelections(joins)).collect(Collectors.toList()));
 
@@ -511,9 +522,11 @@ public class ContactFacadeEjb implements ContactFacade {
 
 		List<ContactExportDto> exportContacts = em.createQuery(cq).setFirstResult(first).setMaxResults(max).getResultList();
 		List<String> resultContactsUuids = exportContacts.stream().map(ContactExportDto::getUuid).collect(Collectors.toList());
+		Map<Long, List<Location>> personAddresses = new HashMap<>();
 
 		if (!exportContacts.isEmpty()) {
 			List<Long> exportContactIds = exportContacts.stream().map(e -> e.getId()).collect(Collectors.toList());
+			List<Long> personIds = exportContacts.stream().map(ContactExportDto::getPersonId).collect(Collectors.toList());
 
 			CriteriaQuery<VisitSummaryExportDetails> visitsCq = cb.createQuery(VisitSummaryExportDetails.class);
 			Root<Contact> visitsCqRoot = visitsCq.from(Contact.class);
@@ -534,6 +547,29 @@ public class ContactFacadeEjb implements ContactFacade {
 
 			List<VisitSummaryExportDetails> visitSummaries = em.createQuery(visitsCq).getResultList();
 
+			// get addresses
+			CriteriaQuery<Object[]> addressesCq = cb.createQuery(Object[].class);
+			Root<Location> addressesRoot = addressesCq.from(Location.class);
+
+			addressesCq.where(addressesRoot.get(Location.PERSON).get(Person.ID).in(personIds));
+
+			addressesCq.multiselect(addressesRoot.get(Location.PERSON).get(Person.ID), addressesRoot);
+			List<Object[]> personIdLocationList = em.createQuery(addressesCq).getResultList();
+
+			personIdLocationList.forEach(personIdLocation -> {
+				Long personId = (Long) personIdLocation[0];
+				Location location = (Location) personIdLocation[1];
+
+				List<Location> personLocations = personAddresses.get(personId);
+				if (personLocations == null) {
+					personLocations = new ArrayList<>();
+				}
+
+				personLocations.add(location);
+				personAddresses.put(personId, personLocations);
+			});
+
+			// get travels
 			Map<Long, List<EpiDataTravel>> travels = null;
 			List<EpiDataTravel> travelsList = null;
 			CriteriaQuery<EpiDataTravel> travelsCq = cb.createQuery(EpiDataTravel.class);
@@ -573,6 +609,12 @@ public class ContactFacadeEjb implements ContactFacade {
 					exportContact.setLastCooperativeVisitSymptoms(SymptomsHelper.buildSymptomsHumanString(symptoms, true, userLanguage));
 					exportContact.setLastCooperativeVisitSymptomatic(symptoms.getSymptomatic() ? YesNoUnknown.YES : YesNoUnknown.NO);
 				}
+
+				List<Location> addresses = personAddresses.getOrDefault(exportContact.getPersonId(), Collections.emptyList());
+
+				addresses.stream().filter(a -> Boolean.TRUE.equals(a.isMainAddress())).findFirst().ifPresent(mainAddress -> {
+
+				});
 
 				if (travels != null) {
 					Optional.ofNullable(travels.get(exportContact.getEpiDataId())).ifPresent(caseTravels -> {

@@ -265,6 +265,12 @@ public class CaseService extends AbstractCoreAdoService<Case> {
 
 		Predicate filter = createMapCasesFilter(cb, cq, caze, region, district, disease, from, to);
 
+		// Address subquery
+		Subquery<Location> addressSq = cq.subquery(Location.class);
+		Root<Person> personRoot = addressSq.from(Person.class);
+		Join<Person, Location> locationJoin = personRoot.join(Person.ADDRESSES, JoinType.LEFT);
+		addressSq.where(cb.isTrue(locationJoin.get(Location.MAIN_ADDRESS)));
+
 		List<MapCaseDto> result;
 		if (filter != null) {
 			cq.where(filter);
@@ -281,8 +287,8 @@ public class CaseService extends AbstractCoreAdoService<Case> {
 				joins.getFacility().get(Facility.LONGITUDE),
 				caze.get(Case.REPORT_LAT),
 				caze.get(Case.REPORT_LON),
-				joins.getPersonAddress().get(Location.LATITUDE),
-				joins.getPersonAddress().get(Location.LONGITUDE),
+				addressSq.select(locationJoin.get(Location.LATITUDE)),
+				addressSq.select(locationJoin.get(Location.LONGITUDE)),
 				joins.getReportingUser().get(User.UUID),
 				joins.getRegion().get(Region.UUID),
 				joins.getDistrict().get(District.UUID),
@@ -503,7 +509,7 @@ public class CaseService extends AbstractCoreAdoService<Case> {
 		Join<Case, District> district = joins.getDistrict();
 		Join<Case, Community> community = joins.getCommunity();
 		Join<Case, Facility> facility = joins.getFacility();
-		Join<Person, Location> location = person.join(Person.ADDRESS, JoinType.LEFT);
+		Join<Person, Location> locations = joins.getPersonAddresses();
 
 		Predicate filter = null;
 		if (caseCriteria.getReportingUserRole() != null) {
@@ -621,13 +627,13 @@ public class CaseService extends AbstractCoreAdoService<Case> {
 			filter = and(cb, filter, cb.equal(person.get(Person.UUID), caseCriteria.getPerson().getUuid()));
 		}
 		if (caseCriteria.getMustHaveNoGeoCoordinates() != null && caseCriteria.getMustHaveNoGeoCoordinates() == true) {
-			Join<Person, Location> personAddress = person.join(Person.ADDRESS, JoinType.LEFT);
+			Join<Person, Location> personAddresses = person.join(Person.ADDRESSES, JoinType.LEFT);
 			filter = and(
 				cb,
 				filter,
 				cb.and(
 					cb.or(cb.isNull(from.get(Case.REPORT_LAT)), cb.isNull(from.get(Case.REPORT_LON))),
-					cb.or(cb.isNull(personAddress.get(Location.LATITUDE)), cb.isNull(personAddress.get(Location.LONGITUDE)))));
+					cb.or(cb.isNull(locations.get(Location.LATITUDE)), cb.isNull(locations.get(Location.LONGITUDE)))));
 		}
 		if (caseCriteria.getMustBePortHealthCaseWithoutFacility() != null && caseCriteria.getMustBePortHealthCaseWithoutFacility() == true) {
 			filter = and(
@@ -680,8 +686,8 @@ public class CaseService extends AbstractCoreAdoService<Case> {
 						cb.like(cb.lower(facility.get(Facility.NAME)), textFilter),
 						cb.like(cb.lower(from.get(Case.HEALTH_FACILITY_DETAILS)), textFilter),
 						phoneNumberPredicate(cb, person.get(Person.PHONE), textFilter),
-						cb.like(cb.lower(location.get(Location.CITY)), textFilter),
-						cb.like(cb.lower(location.get(Location.POSTAL_CODE)), textFilter));
+						cb.like(cb.lower(locations.get(Location.CITY)), textFilter),
+						cb.like(cb.lower(locations.get(Location.POSTAL_CODE)), textFilter));
 					filter = and(cb, filter, likeFilters);
 				}
 			}
@@ -867,7 +873,7 @@ public class CaseService extends AbstractCoreAdoService<Case> {
 
 			Join<Case, Person> casePersonJoin = casePath.join(Case.PERSON, JoinType.LEFT);
 			filters.add(changeDateFilter(cb, date, casePersonJoin));
-			filters.add(changeDateFilter(cb, date, casePersonJoin, Person.ADDRESS));
+			filters.add(changeDateFilter(cb, date, casePersonJoin, Person.ADDRESSES));
 		}
 
 		return cb.or(filters.build().toArray(Predicate[]::new));

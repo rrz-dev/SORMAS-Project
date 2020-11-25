@@ -15,8 +15,6 @@
 
 package de.symeda.sormas.utils;
 
-import java.util.List;
-
 import javax.persistence.criteria.From;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
@@ -48,21 +46,14 @@ public class CaseJoins<T extends AbstractDomainObject> extends AbstractDomainObj
 	private Join<Case, Facility> facility;
 	private Join<Case, PointOfEntry> pointOfEntry;
 	private Join<Case, User> surveillanceOfficer;
-	private Join<Person, Location> address;
 	private Join<Case, User> reportingUser;
-	private Join<Person, Location> personAddress;
-	private Join<Location, Region> personAddressRegion;
-	private Join<Location, District> personAddressDistrict;
-	private Join<Location, Community> personAddressCommunity;
-	private Join<Location, Facility> personAddressFacility;
-	private Join<Person, Facility> occupationFacility;
 	private Join<Case, Hospitalization> hospitalization;
 	private Join<Case, EpiData> epiData;
 	private Join<Case, Symptoms> symptoms;
 	private Join<Case, ClinicalCourse> clinicalCourse;
 	private Join<ClinicalCourse, HealthConditions> healthConditions;
 	private Join<Case, EventParticipant> eventParticipants;
-	private Join<Person, List<Location>> personAddresses;
+	private Join<Person, Location> personAddresses;
 
 	public CaseJoins(From<T, Case> caze) {
 		super(caze);
@@ -124,60 +115,12 @@ public class CaseJoins<T extends AbstractDomainObject> extends AbstractDomainObj
 		this.surveillanceOfficer = surveillanceOfficer;
 	}
 
-	public Join<Person, Location> getAddress() {
-		return getOrCreate(address, Person.ADDRESS, JoinType.LEFT, getPerson(), this::setAddress);
-	}
-
-	private void setAddress(Join<Person, Location> address) {
-		this.address = address;
-	}
-
 	public Join<Case, User> getReportingUser() {
 		return getOrCreate(reportingUser, Case.REPORTING_USER, JoinType.LEFT, this::setReportingUser);
 	}
 
 	private void setReportingUser(Join<Case, User> reportingUser) {
 		this.reportingUser = reportingUser;
-	}
-
-	public Join<Person, Location> getPersonAddress() {
-		return getOrCreate(personAddress, Person.ADDRESS, JoinType.LEFT, getPerson(), this::setPersonAddress);
-	}
-
-	private void setPersonAddress(Join<Person, Location> personAddress) {
-		this.personAddress = personAddress;
-	}
-
-	public Join<Location, Region> getPersonAddressRegion() {
-		return getOrCreate(personAddressRegion, Location.REGION, JoinType.LEFT, getPersonAddress(), this::setPersonAddressRegion);
-	}
-
-	private void setPersonAddressRegion(Join<Location, Region> personAddressRegion) {
-		this.personAddressRegion = personAddressRegion;
-	}
-
-	public Join<Location, District> getPersonAddressDistrict() {
-		return getOrCreate(personAddressDistrict, Location.DISTRICT, JoinType.LEFT, getPersonAddress(), this::setPersonAddressDistrict);
-	}
-
-	private void setPersonAddressDistrict(Join<Location, District> personAddressDistrict) {
-		this.personAddressDistrict = personAddressDistrict;
-	}
-
-	public Join<Location, Community> getPersonAddressCommunity() {
-		return getOrCreate(personAddressCommunity, Location.COMMUNITY, JoinType.LEFT, getPersonAddress(), this::setPersonAddressCommunity);
-	}
-
-	private void setPersonAddressCommunity(Join<Location, Community> personAddressCommunity) {
-		this.personAddressCommunity = personAddressCommunity;
-	}
-
-	public Join<Location, Facility> getPersonAddressFacility() {
-		return getOrCreate(personAddressFacility, Location.FACILITY, JoinType.LEFT, getAddress(), this::setPersonAddressFacility);
-	}
-
-	private void setPersonAddressFacility(Join<Location, Facility> personAddressFacility) {
-		this.personAddressFacility = personAddressFacility;
 	}
 
 	public Join<Case, Hospitalization> getHospitalization() {
@@ -228,11 +171,11 @@ public class CaseJoins<T extends AbstractDomainObject> extends AbstractDomainObj
 		return getOrCreate(eventParticipants, Case.EVENT_PARTICIPANTS, JoinType.LEFT, this::setEventParticipants);
 	}
 
-	public Join<Person, List<Location>> getPersonAddresses() {
+	public Join<Person, Location> getPersonAddresses() {
 		return getOrCreate(personAddresses, Person.ADDRESSES, JoinType.LEFT, getPerson(), this::setPersonAddresses);
 	}
 
-	private void setPersonAddresses(Join<Person, List<Location>> personAddresses) {
+	private void setPersonAddresses(Join<Person, Location> personAddresses) {
 		this.personAddresses = personAddresses;
 	}
 }

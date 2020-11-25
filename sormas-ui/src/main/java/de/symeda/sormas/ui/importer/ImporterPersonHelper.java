@@ -57,7 +57,7 @@ public final class ImporterPersonHelper {
 		case PersonDto.PLACE_OF_BIRTH_DISTRICT:
 			return person.getPlaceOfBirthRegion();
 		case LocationDto.DISTRICT:
-			return person.getAddress().getRegion();
+			return person.getMainAddress() != null ? person.getMainAddress().getRegion() : null;
 		default:
 			throw new IllegalArgumentException(propertyName);
 		}
@@ -68,7 +68,7 @@ public final class ImporterPersonHelper {
 		case PersonDto.PLACE_OF_BIRTH_COMMUNITY:
 			return person.getPlaceOfBirthDistrict();
 		case LocationDto.COMMUNITY:
-			return person.getAddress().getDistrict();
+			return person.getMainAddress() != null ? person.getMainAddress().getDistrict() : null;
 		default:
 			throw new IllegalArgumentException(propertyName);
 		}

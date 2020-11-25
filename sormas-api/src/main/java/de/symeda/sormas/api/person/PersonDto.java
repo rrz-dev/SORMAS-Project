@@ -31,8 +31,6 @@ import de.symeda.sormas.api.region.DistrictReferenceDto;
 import de.symeda.sormas.api.region.RegionReferenceDto;
 import de.symeda.sormas.api.utils.DataHelper;
 import de.symeda.sormas.api.utils.Diseases;
-import de.symeda.sormas.api.utils.EmbeddedPersonalData;
-import de.symeda.sormas.api.utils.EmbeddedSensitiveData;
 import de.symeda.sormas.api.utils.HideForCountriesExcept;
 import de.symeda.sormas.api.utils.Outbreaks;
 import de.symeda.sormas.api.utils.PersonalData;
@@ -76,7 +74,6 @@ public class PersonDto extends PseudonymizableDto {
 
 	public static final String PHONE = "phone";
 	public static final String PHONE_OWNER = "phoneOwner";
-	public static final String ADDRESS = "address";
 
 	public static final String EDUCATION_TYPE = "educationType";
 	public static final String EDUCATION_DETAILS = "educationDetails";
@@ -240,9 +237,6 @@ public class PersonDto extends PseudonymizableDto {
 	private String phone;
 	@SensitiveData
 	private String phoneOwner;
-	@EmbeddedPersonalData
-	@EmbeddedSensitiveData
-	private LocationDto address;
 	@SensitiveData
 	private String emailAddress;
 
@@ -425,13 +419,11 @@ public class PersonDto extends PseudonymizableDto {
 		this.phoneOwner = phoneOwner;
 	}
 
-	public LocationDto getAddress() {
-		return address;
-	}
-
-	public void setAddress(LocationDto address) {
-		this.address = address;
-	}
+	//TODO: Remove getter
+	@Deprecated
+//	public LocationDto getAddress() {
+//		return getMainAddress();
+//	}
 
 	public String getNickname() {
 		return nickname;
@@ -667,7 +659,6 @@ public class PersonDto extends PseudonymizableDto {
 
 		PersonDto person = new PersonDto();
 		person.setUuid(DataHelper.createUuid());
-		person.setAddress(LocationDto.build());
 		return person;
 	}
 

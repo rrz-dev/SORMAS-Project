@@ -527,8 +527,18 @@ public class CaseFacadeEjb implements CaseFacade {
 				cb.isFalse(eventCountRoot.get(EventParticipant.DELETED))));
 		eventCountSq.select(cb.countDistinct(event.get(Event.ID)));
 
+		// Address subquery
+		Subquery<Location> addressSq = cq.subquery(Location.class);
+		Root<Person> personRoot = addressSq.from(Person.class);
+		Join<Person, Location> locationJoin = personRoot.join(Person.ADDRESSES, JoinType.LEFT);
+		Join<Location, Region> regionJoin = locationJoin.join(Location.REGION, JoinType.LEFT);
+		Join<Location, District> districtJoin = locationJoin.join(Location.DISTRICT, JoinType.LEFT);
+		Join<Location, Community> communityJoin = locationJoin.join(Location.COMMUNITY, JoinType.LEFT);
+		Join<Location, Facility> facilityJoin = locationJoin.join(Location.FACILITY, JoinType.LEFT);
+		addressSq.where(cb.isTrue(locationJoin.get(Location.MAIN_ADDRESS)));
+
 		//@formatter:off
-		cq.multiselect(caseRoot.get(Case.ID), joins.getPerson().get(Person.ID), joins.getPersonAddress().get(Location.ID),
+		cq.multiselect(caseRoot.get(Case.ID), joins.getPerson().get(Person.ID), locationJoin.get(Location.ID),
 				joins.getEpiData().get(EpiData.ID), joins.getSymptoms().get(Symptoms.ID), joins.getHospitalization().get(Hospitalization.ID),
 				joins.getDistrict().get(District.ID), joins.getHealthConditions().get(HealthConditions.ID), caseRoot.get(Case.UUID),
 				caseRoot.get(Case.EPID_NUMBER), caseRoot.get(Case.DISEASE), caseRoot.get(Case.DISEASE_DETAILS),
@@ -560,12 +570,17 @@ public class CaseFacadeEjb implements CaseFacade {
 				joins.getPerson().get(Person.PRESENT_CONDITION), joins.getPerson().get(Person.DEATH_DATE), joins.getPerson().get(Person.BURIAL_DATE),
 				joins.getPerson().get(Person.BURIAL_CONDUCTOR), joins.getPerson().get(Person.BURIAL_PLACE_DESCRIPTION),
 				// address
-				joins.getPersonAddressRegion().get(Region.NAME), joins.getPersonAddressDistrict().get(District.NAME), joins.getPersonAddressCommunity().get(Community.NAME),
-				joins.getPersonAddress().get(Location.CITY), joins.getPersonAddress().get(Location.STREET), joins.getPersonAddress().get(Location.HOUSE_NUMBER),
-				joins.getPersonAddress().get(Location.ADDITIONAL_INFORMATION), joins.getPersonAddress().get(Location.POSTAL_CODE),
-				joins.getPersonAddressFacility().get(Facility.NAME),
-				joins.getPersonAddressFacility().get(Facility.UUID),
-				joins.getPersonAddress().get(Location.FACILITY_DETAILS),
+				addressSq.select(regionJoin.get(Region.NAME)),
+				addressSq.select(districtJoin.get(District.NAME)),
+				addressSq.select(communityJoin.get(Community.NAME)),
+				addressSq.select(locationJoin.get(Location.CITY)),
+				addressSq.select(locationJoin.get(Location.STREET)),
+				addressSq.select(locationJoin.get(Location.HOUSE_NUMBER)),
+				addressSq.select(locationJoin.get(Location.ADDITIONAL_INFORMATION)),
+				addressSq.select(locationJoin.get(Location.POSTAL_CODE)),
+				addressSq.select(facilityJoin.get(Facility.NAME)),
+				addressSq.select(facilityJoin.get(Facility.UUID)),
+				addressSq.select(locationJoin.get(Location.FACILITY_DETAILS)),
 				// phone
 				joins.getPerson().get(Person.PHONE), joins.getPerson().get(Person.PHONE_OWNER), joins.getPerson().get(Person.EDUCATION_TYPE),
 				joins.getPerson().get(Person.EDUCATION_DETAILS), joins.getPerson().get(Person.OCCUPATION_TYPE),
@@ -615,9 +630,7 @@ public class CaseFacadeEjb implements CaseFacade {
 			}
 
 			Map<Long, Location> personAddresses = null;
-			if (exportConfiguration == null
-				|| exportConfiguration.getProperties().contains(PersonDto.ADDRESS)
-				|| exportConfiguration.getProperties().contains(CaseExportDto.ADDRESS_GPS_COORDINATES)) {
+			if (exportConfiguration == null || exportConfiguration.getProperties().contains(CaseExportDto.ADDRESS_GPS_COORDINATES)) {
 				List<Location> personAddressesList = null;
 				CriteriaQuery<Location> personAddressesCq = cb.createQuery(Location.class);
 				Root<Location> personAddressesRoot = personAddressesCq.from(Location.class);
